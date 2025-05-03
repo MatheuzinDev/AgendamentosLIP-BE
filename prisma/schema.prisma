@@ -35,7 +35,6 @@ model Mesa {
   atualizado_em DateTime @updatedAt
 
   agendamentos       Agendamento[]
-  horariosIndisponiveis HorarioIndisponivel[]
 
   @@map("mesas")
 }
@@ -58,18 +57,6 @@ model Agendamento {
 
   @@unique([mesa_id, data, horario_inicio])
   @@map("agendamentos")
-}
-
-model HorarioIndisponivel {
-  id          String     @id @default(uuid())
-  mesa        Mesa       @relation(fields: [mesa_id], references: [id], onDelete: Cascade)
-  mesa_id     String
-  data_inicio DateTime
-  data_fim    DateTime
-  motivo      String
-  criado_em   DateTime   @default(now())
-
-  @@map("horarios_indisponiveis")
 }
 
 enum TipoUsuario {
