@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id          String      @id @default(uuid())
+  nome        String
+  email       String      @unique
+  matricula   String      @unique
+  tipo        TipoUsuario
+  senha       String
+  telefone    String?
+  nascimento  DateTime?
+  criado_em   DateTime    @default(now())
+  atualizado_em DateTime @updatedAt
+
+  agendamentos  Agendamento[]
+  supervisorEm  Agendamento[] @relation("SupervisorAgendamentos")
+
+  @@map("usuarios")
+}
+
+model Mesa {
+  id          String      @id @default(uuid())
+  numero      Int         @unique
+  descricao   String?
+  status      StatusMesa  @default(DISPONIVEL)
+  recursos    String[]
+  criado_em   DateTime    @default(now())
+  atualizado_em DateTime @updatedAt
+
+  agendamentos       Agendamento[]
+  horariosIndisponiveis HorarioIndisponivel[]
+
+  @@map("mesas")
+}
+
+model Agendamento {
+  id               String       @id @default(uuid())
+  aluno            Usuario      @relation(fields: [aluno_id], references: [id], onDelete: Cascade)
+  aluno_id         String
+  mesa             Mesa         @relation(fields: [mesa_id], references: [id], onDelete: Cascade)
+  mesa_id          String
+  data             DateTime
+  horario_inicio   DateTime
+  horario_fim      DateTime
+  status           StatusAgendamento @default(PENDENTE)
+  motivo_rejeicao  String?
+  supervisor       Usuario?     @relation(fields: [supervisor_id], references: [id], onDelete: SetNull, name: "SupervisorAgendamentos")
+  supervisor_id    String?
+  criado_em        DateTime     @default(now())
+  atualizado_em    DateTime     @updatedAt
+
+  @@unique([mesa_id, data, horario_inicio])
+  @@map("agendamentos")
+}
+
+model HorarioIndisponivel {
+  id          String     @id @default(uuid())
+  mesa        Mesa       @relation(fields: [mesa_id], references: [id], onDelete: Cascade)
+  mesa_id     String
+  data_inicio DateTime
+  data_fim    DateTime
+  motivo      String
+  criado_em   DateTime   @default(now())
+
+  @@map("horarios_indisponiveis")
+}
+
+enum TipoUsuario {
+  ALUNO
+  SUPERVISOR
+}
+
+enum StatusMesa {
+  DISPONIVEL
+  OCUPADA
+  RESERVADA
+  MANUTENCAO
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  ACEITO
+  REJEITADO
+  CANCELADO
+}
