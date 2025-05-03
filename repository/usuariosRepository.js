@@ -22,7 +22,8 @@ export const getAll = async () => {
             nome: true,
             email: true,
             matricula: true,
-            tipo: true
+            tipo: true,
+            criado_em: true
         }
     });
 }
@@ -37,7 +38,9 @@ export const getOne = async (id) => {
             matricula: true,
             tipo: true,
             telefone: true,
-            nascimento: true
+            nascimento: true,
+            criado_em: true,
+            atualizado_em: true
         }
     });
 }
@@ -52,6 +55,12 @@ export const update = async (id, data) => {
             tipo: data.tipo,
             telefone: data.telefone,
             nascimento: data.nascimento ? new Date(data.nascimento) : null
+        },
+        select: {
+            id: true,
+            nome: true,
+            email: true,
+            matricula: true
         }
     });
 }
