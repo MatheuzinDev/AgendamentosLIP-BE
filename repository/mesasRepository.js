@@ -8,29 +8,65 @@ export const store = async (data) => {
             descricao: data.descricao || null,
             status: data.status || 'DISPONIVEL',
             recursos: data.recursos || []
+        },
+        select: {
+            id: true,
+            numero: true,
+            status: true
         }
-    })
+    });
 }
 
 export const getAll = async () => {
-    return await prisma.mesa.findMany()
+    return await prisma.mesa.findMany({
+        select: {
+            id: true,
+            numero: true,
+            status: true,
+            descricao: true,
+            recursos: true
+        }
+    });
 }
 
 export const getOne = async (id) => {
     return await prisma.mesa.findUnique({
-        where: { id: id }
-    })
+        where: { id },
+        select: {
+            id: true,
+            numero: true,
+            status: true,
+            descricao: true,
+            recursos: true,
+            criado_em: true,
+            atualizado_em: true
+        }
+    });
 }
 
-export const update = async (id, body) => {
+export const update = async (id, data) => {
     return await prisma.mesa.update({
-        where: { id: id },
-        data: body
-    })
+        where: { id },
+        data: {
+            numero: data.numero,
+            descricao: data.descricao,
+            status: data.status,
+            recursos: data.recursos
+        },
+        select: {
+            id: true,
+            numero: true,
+            status: true
+        }
+    });
 }
 
 export const deletar = async (id) => {
     return await prisma.mesa.delete({
-        where: { id: id }
-    })
+        where: { id },
+        select: {
+            id: true,
+            numero: true
+        }
+    });
 }
