@@ -1,14 +1,17 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
+import bcrypt from 'bcrypt'
 
 export const store = async (data) => {
+    const hashedPassword = await bcrypt.hash(data.senha, 10);
+
     return await prisma.usuario.create({
         data: {
             nome: data.nome,
             email: data.email,
             matricula: data.matricula,
             tipo: data.tipo || 'ALUNO',
-            senha: data.senha,
+            senha: hashedPassword,
             telefone: data.telefone || null,
             nascimento: data.nascimento ? new Date(data.nascimento) : null
         }
@@ -16,16 +19,7 @@ export const store = async (data) => {
 }
 
 export const getAll = async () => {
-    return await prisma.usuario.findMany({
-        select: {
-            id: true,
-            nome: true,
-            email: true,
-            matricula: true,
-            tipo: true,
-            criado_em: true
-        }
-    });
+    return await prisma.usuario.findMany();
 }
 
 export const getOne = async (id) => {
@@ -43,6 +37,12 @@ export const getOne = async (id) => {
             atualizado_em: true
         }
     });
+}
+
+export const getOneByMatricula = async (matricula) => {
+    return await prisma.usuario.findUnique({
+        where: { matricula }
+    })
 }
 
 export const update = async (id, data) => {
@@ -68,5 +68,31 @@ export const update = async (id, data) => {
 export const deletar = async (id) => {
     return await prisma.usuario.delete({
         where: { id }
+    });
+}
+
+
+export const updateByMatricula = async (matricula, data) => {
+    if (data.senha) {
+        data.senha = await bcrypt.hash(data.senha, 10);
+    }
+
+    return await prisma.usuario.update({
+        where: { matricula },
+        data: {
+            nome: data.nome,
+            email: data.email,
+            matricula: data.matricula,
+            tipo: data.tipo,
+            telefone: data.telefone,
+            nascimento: data.nascimento ? new Date(data.nascimento) : null,
+            senha: data.senha
+        }
+    });
+}
+
+export const deletarByMatricula = async (matricula) => {
+    return await prisma.usuario.delete({
+        where: { matricula } // Delete por matrícula
     });
 }
