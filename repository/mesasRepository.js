@@ -5,9 +5,7 @@ export const store = async (data) => {
     return await prisma.mesa.create({
         data: {
             numero: data.numero,
-            descricao: data.descricao || null,
-            status: data.status || 'DISPONIVEL',
-            recursos: data.recursos || []
+            status: data.status || 'DISPONIVEL'
         },
         select: {
             id: true,
@@ -23,8 +21,6 @@ export const getAll = async () => {
             id: true,
             numero: true,
             status: true,
-            descricao: true,
-            recursos: true
         }
     });
 }
@@ -36,8 +32,6 @@ export const getOne = async (id) => {
             id: true,
             numero: true,
             status: true,
-            descricao: true,
-            recursos: true,
             criado_em: true,
             atualizado_em: true
         }
@@ -49,9 +43,7 @@ export const update = async (id, data) => {
         where: { id },
         data: {
             numero: data.numero,
-            descricao: data.descricao,
             status: data.status,
-            recursos: data.recursos
         },
         select: {
             id: true,

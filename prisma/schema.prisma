@@ -28,9 +28,7 @@ model Usuario {
 model Mesa {
   id          String      @id @default(uuid())
   numero      Int         @unique
-  descricao   String?
   status      StatusMesa  @default(DISPONIVEL)
-  recursos    String[]
   criado_em   DateTime    @default(now())
   atualizado_em DateTime @updatedAt
 
