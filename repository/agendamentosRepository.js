@@ -2,7 +2,18 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const store = async (data) => {
-    // Verifica existência do aluno e mesa
+    const agendamentoExistente = await prisma.agendamento.findFirst({
+        where: {
+            aluno_id: data.aluno_id,
+            data: new Date(data.data),
+            horario_inicio: new Date(data.horario_inicio)
+        }
+    });
+
+    if (agendamentoExistente) {
+        throw new Error('Usuário já possui agendamento neste horário');
+    }
+
     const [aluno, mesa] = await Promise.all([
         prisma.usuario.findUnique({ where: { id: data.aluno_id } }),
         prisma.mesa.findUnique({ where: { id: data.mesa_id } })
@@ -30,8 +41,9 @@ export const store = async (data) => {
     });
 }
 
-export const getAll = async () => {
+export const getAll = async (filters = {}) => {
     return await prisma.agendamento.findMany({
+        where: filters,
         select: {
             id: true,
             data: true,
@@ -85,5 +97,22 @@ export const deletar = async (id) => {
     return await prisma.agendamento.delete({
         where: { id },
         select: { id: true, data: true, mesa: { select: { numero: true } } }
+    });
+}
+
+export const getAllPendentes = async () => {
+    return await prisma.agendamento.findMany({
+        where: { status: 'PENDENTE' },
+        select: {
+            id: true,
+            data: true,
+            horario_inicio: true,
+            horario_fim: true,
+            status: true,
+            aluno: { select: { nome: true, matricula: true } },
+            mesa: { select: { numero: true } },
+            criado_em: true
+        },
+        orderBy: { criado_em: 'asc' }
     });
 }

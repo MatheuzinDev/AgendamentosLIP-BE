@@ -21,6 +21,9 @@ export const getAll = async () => {
             id: true,
             numero: true,
             status: true,
+        },
+        orderBy: {
+            numero: 'asc'
         }
     });
 }

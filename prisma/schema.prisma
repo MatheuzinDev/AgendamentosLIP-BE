@@ -53,7 +53,7 @@ model Agendamento {
   criado_em        DateTime     @default(now())
   atualizado_em    DateTime     @updatedAt
 
-  @@unique([mesa_id, data, horario_inicio])
+  @@index([mesa_id, status])
   @@map("agendamentos")
 }
 
