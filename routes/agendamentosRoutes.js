@@ -4,6 +4,7 @@ import { verificarToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 
+router.get('/meusAgendamentos', verificarToken, agendamentosControllers.getMeusAgendamentos);
 router.post('/criarAgendamento', verificarToken, agendamentosControllers.store);
 router.get('/listarAgendamentos', verificarToken, agendamentosControllers.getAll);
 router.get('/listarAgendamento/:id', agendamentosControllers.getOne);

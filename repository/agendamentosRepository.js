@@ -116,3 +116,22 @@ export const getAllPendentes = async () => {
         orderBy: { criado_em: 'asc' }
     });
 }
+
+export const getMeusAgendamentos = async (filters = {}) => {
+    return await prisma.agendamento.findMany({
+        where: filters,
+        select: {
+            id: true,
+            data: true,
+            horario_inicio: true,
+            horario_fim: true,
+            status: true,
+            motivo_rejeicao: true,
+            aluno: { select: { nome: true, matricula: true } },
+            mesa: { select: { numero: true } },
+            supervisor: { select: { nome: true } },
+            criado_em: true
+        },
+        orderBy: { criado_em: 'desc' }
+    });
+}

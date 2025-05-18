@@ -151,3 +151,21 @@ export const getAllPendentes = async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar pedidos pendentes' });
     }
 }
+
+export const getMeusAgendamentos = async (req, res) => {
+    try {
+        const user = req.user;
+        const { status } = req.query;
+
+        const filters = {
+            aluno_id: user.id,
+            ...(status && { status })
+        };
+
+        const agendamentos = await agendamentosRepository.getMeusAgendamentos(filters);
+        res.status(200).json(agendamentos);
+    } catch (error) {
+        console.error('Erro ao buscar agendamentos:', error);
+        res.status(500).json({ error: 'Erro ao listar agendamentos' });
+    }
+}
