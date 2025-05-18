@@ -32,12 +32,6 @@ export const store = async (req, res) => {
 
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            if (error.code === 'P2002') {
-                return res.status(409).json({
-                    error: 'Conflito de horário',
-                    message: 'Você já possui um agendamento neste horário'
-                });
-            }
             if (error.code === 'P2003') {
                 return res.status(404).json({
                     error: 'Recurso não encontrado',

@@ -2,18 +2,6 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const store = async (data) => {
-    const agendamentoExistente = await prisma.agendamento.findFirst({
-        where: {
-            aluno_id: data.aluno_id,
-            data: new Date(data.data),
-            horario_inicio: new Date(data.horario_inicio)
-        }
-    });
-
-    if (agendamentoExistente) {
-        throw new Error('Usuário já possui agendamento neste horário');
-    }
-
     const [aluno, mesa] = await Promise.all([
         prisma.usuario.findUnique({ where: { id: data.aluno_id } }),
         prisma.mesa.findUnique({ where: { id: data.mesa_id } })
