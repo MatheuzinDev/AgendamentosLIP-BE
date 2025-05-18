@@ -163,3 +163,44 @@ export const deletarByMatricula = async (req, res) => {
         res.status(500).json({ error: 'Erro ao deletar usuário' });
     }
 }
+
+export const getPerfil = async (req, res) => {
+    try {
+        const usuario = await usuariosRepository.getPerfil(req.user.id);
+        
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+
+        res.status(200).json(usuario);
+    } catch (error) {
+        console.error('Erro ao buscar perfil:', error);
+        res.status(500).json({ error: 'Erro interno ao carregar perfil' });
+    }
+};
+
+export const alterarSenha = async (req, res) => {
+    try {
+        const { senha_atual, nova_senha } = req.body;
+        const usuarioId = req.user.id;
+
+        // Chamada correta do repositório com 3 parâmetros
+        const resultado = await usuariosRepository.alterarSenha(
+            usuarioId,
+            senha_atual,
+            nova_senha
+        );
+
+        res.status(200).json({ 
+            message: 'Senha alterada com sucesso',
+            data: resultado
+        });
+
+    } catch (error) {
+        console.error('Erro ao alterar senha:', error);
+        res.status(400).json({ 
+            error: error.message,
+            message: 'Falha na alteração de senha' 
+        });
+    }
+};

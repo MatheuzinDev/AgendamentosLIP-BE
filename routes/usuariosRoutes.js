@@ -12,6 +12,8 @@ router.get('/listarUsuario/:matricula', verificarToken, usuariosControllers.getO
 router.put('/atualizarUsuario/:matricula', verificarToken, usuariosControllers.updateByMatricula);
 //router.delete('/deletarUsuario/:id', usuariosControllers.deletar);
 router.delete('/deletarUsuario/:matricula', verificarToken, usuariosControllers.deletarByMatricula);
+router.get('/perfil', verificarToken, usuariosControllers.getPerfil);
+router.put('/alterarSenha', verificarToken, usuariosControllers.alterarSenha);
 
 
 export default router;

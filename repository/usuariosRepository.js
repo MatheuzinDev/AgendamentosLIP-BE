@@ -96,3 +96,41 @@ export const deletarByMatricula = async (matricula) => {
         where: { matricula } // Delete por matrícula
     });
 }
+
+export const getPerfil = async (id) => {
+    return await prisma.usuario.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            nome: true,
+            email: true,
+            matricula: true,
+            tipo: true,
+            telefone: true,
+            nascimento: true,
+            criado_em: true
+        }
+    });
+};
+
+export const alterarSenha = async (id, senhaAtual, novaSenha) => {
+    const usuario = await prisma.usuario.findUnique({ where: { id } });
+
+    if (!usuario) {
+        throw new Error('Usuário não encontrado');
+    }
+
+    const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
+    
+    if (!senhaValida) {
+        throw new Error('Senha atual incorreta');
+    }
+
+    const novaSenhaHash = await bcrypt.hash(novaSenha, 10);
+
+    return await prisma.usuario.update({
+        where: { id },
+        data: { senha: novaSenhaHash },
+        select: { id: true, email: true, matricula: true }
+    });
+};
