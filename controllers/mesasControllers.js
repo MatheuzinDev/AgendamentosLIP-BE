@@ -33,7 +33,8 @@ export const store = async (req, res) => {
 
 export const getAll = async (req, res) => {
     try {
-        const mesas = await mesasRepository.getAll();
+        const mesas = await mesasRepository.getAllComStatusAtual();
+        console.log('Horário na resposta:', new Date().toISOString());
         res.status(200).json(mesas);
     } catch(error) {
         console.error('Erro ao buscar mesas:', error);
