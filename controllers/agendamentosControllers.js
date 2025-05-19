@@ -149,11 +149,13 @@ export const getAllPendentes = async (req, res) => {
 export const getMeusAgendamentos = async (req, res) => {
     try {
         const user = req.user;
-        const { status } = req.query;
+        const { status, mesaId, data } = req.query; // Adicionamos novos filtros
 
         const filters = {
             aluno_id: user.id,
-            ...(status && { status })
+            ...(status && { status }),
+            ...(mesaId && { mesa_id: mesaId }), // Novo filtro de mesa
+            ...(data && { data: new Date(data) }) // Novo filtro de data
         };
 
         const agendamentos = await agendamentosRepository.getMeusAgendamentos(filters);
