@@ -1,5 +1,7 @@
 import * as agendamentosRepository from '../repository/agendamentosRepository.js';
 import { Prisma } from '@prisma/client';
+import { verificarConflitoCheckin, criarCheckinQR } from '../repository/agendamentosRepository.js';
+import { HORARIOS_AULA } from '../constants/constants.js';
 
 export const store = async (req, res) => {
     try {
@@ -165,3 +167,92 @@ export const getMeusAgendamentos = async (req, res) => {
         res.status(500).json({ error: 'Erro ao listar agendamentos' });
     }
 }
+
+export const checkinQR = async (req, res) => {
+  try {
+    const user = req.user;
+    const { mesaId, agora: agoraISO } = req.body;
+    const agoraUTC = new Date(agoraISO);
+
+    console.log('=== DEBUG - CHECKIN QR ===');
+    console.log('Agora ISO recebido:', agoraISO);
+    console.log('Agora UTC:', agoraUTC.toISOString());
+
+    // Extrai a data (YYYY-MM-DD)
+    const datePart = agoraUTC.toISOString().slice(0, 10);
+    console.log('Date part (YYYY-MM-DD):', datePart);
+
+    // Monta intervalos já com offset -03:00
+    const intervalosAulaUTC = HORARIOS_AULA.map(({ inicio, fim }) => {
+      const inicioUTC = new Date(`${datePart}T${inicio}:00-03:00`);
+      const fimUTC    = new Date(`${datePart}T${fim}:00-03:00`);
+      console.log(`Intervalo local ${inicio}–${fim} → UTC ${inicioUTC.toISOString()}–${fimUTC.toISOString()}`);
+      return { inicioUTC, fimUTC };
+    });
+
+    // Verifica se está em horário de aula
+    const duranteAula = intervalosAulaUTC.some(({ inicioUTC, fimUTC }) => {
+      const dentro = agoraUTC >= inicioUTC && agoraUTC <= fimUTC;
+      console.log(`Verificando se ${agoraUTC.toISOString()} está entre ${inicioUTC.toISOString()} e ${fimUTC.toISOString()}:`, dentro);
+      return dentro;
+    });
+
+    console.log('Durante aula?', duranteAula);
+    if (duranteAula) {
+      return res.status(403).json({
+        error: 'Check-in bloqueado',
+        message: 'Horário de aula! Use o sistema de agendamento'
+      });
+    }
+
+    // Calcula próximo horário de fim (próximo início de aula ou +30min)
+    const proximosInicios = intervalosAulaUTC
+      .map(i => i.inicioUTC)
+      .filter(dt => dt > agoraUTC)
+      .sort((a, b) => a - b);
+
+    console.log('Próximos inícios UTC após agora:', proximosInicios.map(d => d.toISOString()));
+
+    const proximoHorario = proximosInicios[0];
+    console.log('Próximo início selecionado:', proximoHorario ? proximoHorario.toISOString() : 'nenhum');
+
+    const horarioFimUTC = proximoHorario || new Date(agoraUTC.getTime() + 30 * 60000);
+    console.log('Horario fim calculado:', horarioFimUTC.toISOString());
+
+    // Verifica conflito no banco
+    const conflito = await agendamentosRepository.verificarConflitoCheckin(
+      mesaId,
+      agoraUTC,
+      horarioFimUTC
+    );
+    console.log('Conflito no banco?', !!conflito);
+
+    if (conflito) {
+      return res.status(409).json({
+        error: 'Mesa ocupada',
+        message: 'Já existe um check-in ativo nesta mesa'
+      });
+    }
+
+    // Cria check-in
+    const novoAgendamento = await agendamentosRepository.criarCheckinQR(
+      user.id,
+      mesaId,
+      agoraUTC,
+      horarioFimUTC
+    );
+    console.log('Novo agendamento criado:', novoAgendamento);
+
+    return res.status(201).json({
+      ...novoAgendamento,
+      horario_fim: horarioFimUTC.toISOString()
+    });
+
+  } catch (error) {
+    console.error('Erro no check-in QR:', error);
+    return res.status(500).json({
+      error: 'Erro no check-in',
+      message: 'Não foi possível completar a operação'
+    });
+  }
+};

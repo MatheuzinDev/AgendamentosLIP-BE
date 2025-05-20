@@ -123,3 +123,33 @@ export const getMeusAgendamentos = async (filters = {}) => {
         orderBy: { criado_em: 'desc' }
     });
 }
+
+export const verificarConflitoCheckin = async (mesaId, inicioUTC, fimUTC) => {
+    return await prisma.agendamento.findFirst({
+        where: {
+            mesa_id: mesaId,
+            OR: [
+                { status: 'ACEITO' },
+                { status: 'RESERVADO' }
+            ],
+            horario_inicio: { lt: fimUTC },
+            horario_fim: { gt: inicioUTC }
+        }
+    });
+};
+
+export const criarCheckinQR = async (userId, mesaId, inicioUTC, fimUTC) => {
+    return await prisma.agendamento.create({
+        data: {
+            aluno_id: userId,
+            mesa_id: mesaId,
+            data: inicioUTC,
+            horario_inicio: inicioUTC,
+            horario_fim: fimUTC,
+            status: 'RESERVADO'
+        },
+        include: {
+            mesa: { select: { numero: true } }
+        }
+    });
+};

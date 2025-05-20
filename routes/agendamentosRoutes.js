@@ -11,5 +11,6 @@ router.get('/listarAgendamento/:id', agendamentosControllers.getOne);
 router.put('/atualizarAgendamento/:id', agendamentosControllers.update);
 router.delete('/deletarAgendamento/:id', agendamentosControllers.deletar);
 router.get('/pedidosPendentes', verificarToken, agendamentosControllers.getAllPendentes)
+router.post('/checkinQr', verificarToken, agendamentosControllers.checkinQR);
 
 export default router;

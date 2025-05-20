@@ -71,42 +71,44 @@ export const getAllComStatusAtual = async () => {
     const offset = agora.getTimezoneOffset() * 60000;
     const agoraUTC = new Date(agora.getTime() - offset).toISOString();
 
-    const agendamentosAtivos = await prisma.agendamento.findMany({
-        where: {
-            status: 'ACEITO',
-            horario_inicio: {
-                lte: new Date(agoraUTC).toISOString()
+    // Busca agendamentos ACEITOS e RESERVADOS ativos
+    const [agendamentosAtivos, reservasAtivas] = await Promise.all([
+        prisma.agendamento.findMany({
+            where: {
+                status: 'ACEITO',
+                horario_inicio: { lte: agoraUTC },
+                horario_fim: { gte: agoraUTC }
             },
-            horario_fim: {
-                gte: new Date(agoraUTC).toISOString()
-            }
-        },
-        select: {
-            mesa_id: true,
-            horario_inicio: true,
-            horario_fim: true
-        }
-    });
+            select: { mesa_id: true }
+        }),
+        prisma.agendamento.findMany({
+            where: {
+                status: 'RESERVADO',
+                horario_inicio: { lte: agoraUTC },
+                horario_fim: { gte: agoraUTC }
+            },
+            select: { mesa_id: true }
+        })
+    ]);
 
-    console.log('=== DEBUG HORÁRIOS ===');
-    console.log('Hora Local:', new Date().toLocaleString('pt-BR'));
-    console.log('Hora UTC:', agoraUTC);
-
-    agendamentosAtivos.forEach(ag => {
-        const inicioUTC = new Date(ag.horario_inicio).toISOString();
-        const fimUTC = new Date(ag.horario_fim).toISOString();
-        console.log(`Mesa ${ag.mesa_id} | UTC: ${inicioUTC} - ${fimUTC}`);
-    });
-
+    // Conjuntos de IDs de mesas ocupadas/reservadas
     const mesasOcupadasIds = new Set(agendamentosAtivos.map(ag => ag.mesa_id));
+    const mesasReservadasIds = new Set(reservasAtivas.map(ag => ag.mesa_id));
 
+    // Busca todas as mesas
     const mesas = await prisma.mesa.findMany({
         select: { id: true, numero: true, status: true },
         orderBy: { numero: 'asc' }
     });
 
-    return mesas.map(mesa => ({
-        ...mesa,
-        status: mesasOcupadasIds.has(mesa.id) ? 'OCUPADA' : mesa.status
-    }));
+    // Atualiza status dinamicamente
+    return mesas.map(mesa => {
+        if (mesasOcupadasIds.has(mesa.id)) {
+            return { ...mesa, status: 'OCUPADA' }; // Prioridade para ocupadas
+        }
+        if (mesasReservadasIds.has(mesa.id)) {
+            return { ...mesa, status: 'RESERVADA' };
+        }
+        return mesa; // Mantém status original se não houver agendamentos
+    });
 };
