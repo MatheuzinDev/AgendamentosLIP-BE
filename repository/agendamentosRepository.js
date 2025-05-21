@@ -139,13 +139,17 @@ export const verificarConflitoCheckin = async (mesaId, inicioUTC, fimUTC) => {
 };
 
 export const criarCheckinQR = async (userId, mesaId, inicioUTC, fimUTC) => {
+    const inicioLocal = new Date(inicioUTC.getTime() - (3 * 60 * 60 * 1000));
+    const fimLocal = new Date(fimUTC.getTime() - (3 * 60 * 60 * 1000));
+
+    console.log('Horário ajustado para UTC-3:', inicioLocal.toISOString(), fimLocal.toISOString());
     return await prisma.agendamento.create({
         data: {
             aluno_id: userId,
             mesa_id: mesaId,
-            data: inicioUTC,
-            horario_inicio: inicioUTC,
-            horario_fim: fimUTC,
+            data: inicioLocal,
+            horario_inicio: inicioLocal,
+            horario_fim: fimLocal,
             status: 'RESERVADO'
         },
         include: {

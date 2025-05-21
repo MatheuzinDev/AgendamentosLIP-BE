@@ -176,25 +176,26 @@ export const checkinQR = async (req, res) => {
     const { mesaId, agora: agoraISO } = req.body;
     const agoraUTC = new Date(agoraISO);
 
-    // [Alteração] Converter UTC para horário local (-03:00)
-    const offsetLocal = -3 * 60 * 60 * 1000; // Offset em milissegundos para -03:00
-    const agoraLocal = new Date(agoraUTC.getTime() + offsetLocal); 
+    console.log('=== DEBUG - CHECKIN QR ===');
+    console.log('Agora ISO recebido:', agoraISO);
+    console.log('Agora UTC:', agoraUTC.toISOString());
 
-    // [Alteração] Extrair data no fuso local
-    const datePartLocal = agoraLocal.toISOString().slice(0, 10); 
+    // Extrai a data (YYYY-MM-DD)
+    const datePart = agoraUTC.toISOString().slice(0, 10);
+    console.log('Date part (YYYY-MM-DD):', datePart);
 
-    // [Alteração] Montar intervalos no horário LOCAL (sem UTC)
-    const intervalosAulaLocal = HORARIOS_AULA.map(({ inicio, fim }) => {
-      const inicioLocal = new Date(`${datePartLocal}T${inicio}:00`);
-      const fimLocal = new Date(`${datePartLocal}T${fim}:00`);
-      console.log(`Intervalo LOCAL: ${inicioLocal.toISOString()}–${fimLocal.toISOString()}`);
-      return { inicioLocal, fimLocal };
+    // Monta intervalos já com offset -03:00
+    const intervalosAulaUTC = HORARIOS_AULA.map(({ inicio, fim }) => {
+      const inicioUTC = new Date(`${datePart}T${inicio}:00-03:00`);
+      const fimUTC    = new Date(`${datePart}T${fim}:00-03:00`);
+      console.log(`Intervalo local ${inicio}–${fim} → UTC ${inicioUTC.toISOString()}–${fimUTC.toISOString()}`);
+      return { inicioUTC, fimUTC };
     });
 
-    // [Alteração] Verificar se está em horário de aula (usando horário LOCAL)
-    const duranteAula = intervalosAulaLocal.some(({ inicioLocal, fimLocal }) => {
-      const dentro = agoraLocal >= inicioLocal && agoraLocal <= fimLocal;
-      console.log(`Verificando LOCAL: ${agoraLocal.toISOString()} entre ${inicioLocal.toISOString()}–${fimLocal.toISOString()}:`, dentro);
+    // Verifica se está em horário de aula
+    const duranteAula = intervalosAulaUTC.some(({ inicioUTC, fimUTC }) => {
+      const dentro = agoraUTC >= inicioUTC && agoraUTC <= fimUTC;
+      console.log(`Verificando se ${agoraUTC.toISOString()} está entre ${inicioUTC.toISOString()} e ${fimUTC.toISOString()}:`, dentro);
       return dentro;
     });
 
@@ -206,20 +207,27 @@ export const checkinQR = async (req, res) => {
       });
     }
 
-    // [Alteração] Calcular horário fim em UTC (mantendo a lógica original)
-    const proximosIniciosUTC = intervalosAulaLocal.map(({ inicioLocal }) => {
-      return new Date(inicioLocal.getTime() - offsetLocal); // Convertendo local → UTC
-    }).filter(dtUTC => dtUTC > agoraUTC);
+    // Calcula próximo horário de fim (próximo início de aula ou +30min)
+    const proximosInicios = intervalosAulaUTC
+      .map(i => i.inicioUTC)
+      .filter(dt => dt > agoraUTC)
+      .sort((a, b) => a - b);
 
-    const proximoHorarioUTC = proximosIniciosUTC[0];
-    const horarioFimUTC = proximoHorarioUTC || new Date(agoraUTC.getTime() + 30 * 60000);
+    console.log('Próximos inícios UTC após agora:', proximosInicios.map(d => d.toISOString()));
 
-    // Restante do código permanece igual...
+    const proximoHorario = proximosInicios[0];
+    console.log('Próximo início selecionado:', proximoHorario ? proximoHorario.toISOString() : 'nenhum');
+
+    const horarioFimUTC = proximoHorario || new Date(agoraUTC.getTime() + 30 * 60000);
+    console.log('Horario fim calculado:', horarioFimUTC.toISOString());
+
+    // Verifica conflito no banco
     const conflito = await agendamentosRepository.verificarConflitoCheckin(
       mesaId,
       agoraUTC,
       horarioFimUTC
     );
+    console.log('Conflito no banco?', !!conflito);
 
     if (conflito) {
       return res.status(409).json({
@@ -228,12 +236,14 @@ export const checkinQR = async (req, res) => {
       });
     }
 
+    // Cria check-in
     const novoAgendamento = await agendamentosRepository.criarCheckinQR(
       user.id,
       mesaId,
       agoraUTC,
       horarioFimUTC
     );
+    console.log('Novo agendamento criado:', novoAgendamento);
 
     return res.status(201).json({
       ...novoAgendamento,
