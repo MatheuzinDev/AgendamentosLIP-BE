@@ -150,18 +150,20 @@ export const getAllPendentes = async (req, res) => {
 
 export const getMeusAgendamentos = async (req, res) => {
     try {
-        const user = req.user;
-        const { status, mesaId, data } = req.query; // Adicionamos novos filtros
+        const user = req.user; // Já vem do middleware de autenticação
+        const { status, mesaId, data } = req.query;
 
+        // Lógica modificada para supervisores
         const filters = {
-            aluno_id: user.id,
+            ...(user.tipo !== 'SUPERVISOR' && { aluno_id: user.id }), // Filtra por aluno somente se NÃO for supervisor
             ...(status && { status }),
-            ...(mesaId && { mesa_id: mesaId }), // Novo filtro de mesa
-            ...(data && { data: new Date(data) }) // Novo filtro de data
+            ...(mesaId && { mesa_id: mesaId }),
+            ...(data && { data: new Date(data) })
         };
 
         const agendamentos = await agendamentosRepository.getMeusAgendamentos(filters);
         res.status(200).json(agendamentos);
+        
     } catch (error) {
         console.error('Erro ao buscar agendamentos:', error);
         res.status(500).json({ error: 'Erro ao listar agendamentos' });
