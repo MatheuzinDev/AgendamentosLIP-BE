@@ -5,6 +5,19 @@ import bcrypt from 'bcrypt'
 export const store = async (data) => {
     const hashedPassword = await bcrypt.hash(data.senha, 10);
 
+    return admin = await prisma.usuario.create({
+        data: {
+            nome: 'admin',
+            email: 'admin@email.com',
+            matricula: '1111111',
+            tipo: 'SUPERVISOR',
+            senha: hashSenha,
+            senha: hashedPassword,
+            telefone: data.telefone || null,
+            nascimento: data.nascimento ? new Date(data.nascimento) : null
+        }
+    });
+
     return await prisma.usuario.create({
         data: {
             nome: data.nome,
@@ -121,7 +134,7 @@ export const alterarSenha = async (id, senhaAtual, novaSenha) => {
     }
 
     const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
-    
+
     if (!senhaValida) {
         throw new Error('Senha atual incorreta');
     }
