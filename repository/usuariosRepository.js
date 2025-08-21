@@ -7,18 +7,6 @@ export const store = async (data) => {
 
     return await prisma.usuario.create({
         data: {
-            nome: 'admin',
-            email: 'admin@email.com',
-            matricula: '1111111',
-            tipo: 'SUPERVISOR',
-            senha: hashedPassword,
-            telefone: data.telefone || null,
-            nascimento: data.nascimento ? new Date(data.nascimento) : null
-        }
-    });
-
-    return await prisma.usuario.create({
-        data: {
             nome: data.nome,
             email: data.email,
             matricula: data.matricula,
@@ -133,7 +121,7 @@ export const alterarSenha = async (id, senhaAtual, novaSenha) => {
     }
 
     const senhaValida = await bcrypt.compare(senhaAtual, usuario.senha);
-
+    
     if (!senhaValida) {
         throw new Error('Senha atual incorreta');
     }
