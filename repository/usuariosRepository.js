@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt'
 export const store = async (data) => {
     const hashedPassword = await bcrypt.hash(data.senha, 10);
 
-    return admin = await prisma.usuario.create({
+    return await prisma.usuario.create({
         data: {
             nome: 'admin',
             email: 'admin@email.com',
